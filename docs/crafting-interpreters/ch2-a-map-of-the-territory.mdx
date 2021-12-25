@@ -1,0 +1,109 @@
+---
+---
+
+# Chapter 2: A Map of the Territory
+
+This chapter provides a brief overview of compilers and interpreters. There is a lot of new terminology here, so it's okay if you don't fully understand something in this chapter. It may be useful to return to this chapter every so often (and especially at the end of finishing your first Lox interpreter) to review your understanding of compilers and interpreters.
+
+Throughout this book, the use of the word _"language"_ is typically a shorthand that means _"language implementation"_. This is in contrast with the _"language itself"_ in the sense of some "essence" or Platonic ideal form. The usage and meaning will sometimes switch back and forth between implementation and the language itself.
+
+## Section 2.1: The Parts of a Language
+
+The first step is **lexical analysis** (also known as _scanning_ or _lexing_). A _scanner_ or _lexer_ will accept a linear stream of characters as input and produce a stream of **tokens** as output. In the process, the scanner may skip over insignificant characters like whitespace.
+
+$$
+\text{stream of characters}
+\rightarrow \bold{Scanner}
+\rightarrow \text{stream of tokens}
+$$
+
+The next step is **parsing**. A _parser_ will accept a stream of tokens and produce an **abstract syntax tree (AST)** (also known as a _parse tree_). The parser is configured with a **grammar**, which defines the rules of how the AST is structured. If the stream of tokens cannot be transformed into an AST according to the rules of the grammar, then a _syntax error_ will be produced instead of an AST.
+
+$$
+\text{stream of tokens}
+\rightarrow \bold{Parser}
+\rightarrow \text{AST}
+$$
+
+:::info Fun Fact
+
+The concept of parsing originated in artificial intelligence community. The techniques that are used to parse programming languages today were originally created to parse _human languages_. The AI researchers wanted to get computers to talk to us. Unfortunately, human languages are not well-defined and change quickly based on context, and this area of research has stalled.
+
+:::
+
+The next step is **static analysis**. This process involves **resolution** (also known as _binding_) of _identifiers_ (also known as variables). Basically, your source code may use variables and refer to a variable's identifier many times; when a variable's identifier is used in multiple places, you want to keep track of this.
+
+Depending on the language, static analysis could also include **type checking**. If an operation is not compatible with the type of the operand(s), then a _type error_ will be produced. Lox, the language that is built in this book, is dynamically typed. So, type checking will not happen during static analysis, but at runtime.
+
+After static analysis, we will have additional information about each token in our AST. This information can be stored in the AST itself as **attributes**, or it can be stored separately in a **symbol table**.
+
+Everything up until this point (lexical analysis, parsing, and static analysis) are considered the **front end** of a language's implementation. After this, there is a **back end** and an optional **middle end**. The middle end was conceived later by William Wulf, and he decided to keep the original "*end" naming convention.
+
+The essence of the middle end is the use of **intermediate representations (IR)**.
+
+:::caution Research To-Do
+
+What is the output of a front end? We know the input is a stream of characters, but is the output an AST?
+
+What is the input and output of a middle end?
+
+What is the input of a back end? We know the output is a stream of bytes.
+
+:::
+
+
+The IR is the output of a front end and the input of a back end. This makes _portability_ much easier when there are many target CPU architectures that you want to run your program on.
+
+You can also perform some optmizations on the IR. Some techniques in IR optimizations are:
+
+* constant folding
+* constant propagation
+* common subexpression elimination
+* loop invariant code motion
+* global value numbering
+* strength reduction
+* scalar replacement of aggregates
+* dead code elimination
+* loop unrolling
+
+After the middle end, we have the back end. In general, the back end mostly involves **code generation**. The generated code is in a language of some primitive instructions that run on a CPU. The code that runs on a CPU is _very fast_, but also very tedious to write by hand and is not portable to other CPUs.
+
+Rather than generating code that runs on a physical CPU, we can also generate code that runs on a **virtual machine (VM)**; this code is often called _bytecode_ because usually each instructions is a single byte long. However, this is like punting the problem down the road; there still needs to be some translation from the bytecode into instructions that runs on the CPU. One solution is to use the bytecode as an IR and generate the CPU instructions. Another solution is to write a VM that is portable. In this way, you are delegating the portability problem to the VM.
+
+Once we have the CPU instructions, the program reaches the **runtime**. The CPU instructions are loaded into memory and fed into the CPU. In this sense, the CPU instructions are just _data_, and the CPU will perform certain operations based on the stream of data that it receives.
+
+In some cases, there are behaviors of the runtime that are embedded in the generated code. For example, _garbage collection (GC)_ is a runtime behavior. GC can be implemented in the VM, or it can be embedded in the CPU instructions.
+
+:::info Fun Fact
+
+When a Go program is compiled for a given CPU architecture, the Go runtime is embedded directly in the executable. However, the runtime of Java, Python, and JavaScript is embedded in the VM / interpreter.
+
+:::
+
+## Section 2.2: Shortcuts and Alternate Routes
+
+The front end -> middle end -> back end style of implementing a language can be very slow or complex. Luckily, it is not the only way to implement a language. There are some techniques that optimize for simplicity or speed of execution.
+
+A **single-pass compiler** will interweave scanning, parsing, analysis, and code generation, without ever building an AST or IR. While single-pass compilers may be faster and simpler, they restrict the design of a language. For example, in C you cannot call a function before it is declared.
+
+A **tree-walk interpreter** will begin executing code on the AST, right after parsing. The interpreter will traverse the AST and evaluate leaf nodes immediately.
+
+:::info Fun Fact
+
+Ruby was first implemented with a tree walk interpreter, called "Matz' Ruby Interpreter" (MRI). In Ruby 1.9, Koichi Sasada's "Yet Another Ruby VM" (YARV) replaced the MRI and runs on YARV bytecode.
+
+:::
+
+A **transpiler** (also known as a _source-to-source compiler_) will transform a source language into second source language. In this way, you can leverage all the compilers that exist for the second language.
+
+A **just-in-time compiler (JIT compiler)** will detect the CPU architecture that the compiler is running on and choose the best backend for the given execution environment. In some advanced JIT compilers, the first compilation is not optimized. As the program runs, the JIT compiler will track which parts of the program are executed most often (the _critical paths_) and re-compile those parts of the program with optimizations.
+
+## Section 2.3: Compilers and Interpreters
+
+The distinction between compilers and interpreters is not well-defined across the software community. However, there are general guidelines for the use of these terms:
+
+* **Compiling** is an _implementation_ of translating source code into destination code. This includes bytecode generation, machine code generation, and transpiling.
+
+* An **interpreter** executes the destination code, but a **compiler** does not.
+
+So, it's possible for an interpreter to have a compiler inside it. Sometimes, an interpreter will parse the source code into an AST and execute it; this is what a tree-walk interpreter does. One tricky case is Go: `go build` will compile Go source code into machine code and then stop, but `go build` will do that and then immediately execute the generated executable. With Go as an example, it seems that any compiler can be turned into an interpreter by appending the "execute" step to the end.

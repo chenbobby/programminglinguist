@@ -1,0 +1,351 @@
+---
+---
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Chapter 5: Representing Code
+
+Before we can transform our stream of tokens into an AST, we must first define the rules of our language: _the grammar_.
+
+In the previous chapter about scanning, we used _regular expressions_ to construct _regular languages_. However, regular languages are only defined for linear data structures, like a stream of tokens.
+
+An AST is a tree, a nested data structure. So, we will need to introduce context-free grammars (CFG). CFGs fall under concept called **formal grammars**. Formal grammars include _lexical grammars_ and _syntactic grammars_.
+
+A **lexical grammar** defines the rules for how a _stream of characters_ is transformed into a _stream of tokens_.
+
+A **syntactic grammar** defines the rules for how a _stream of tokens_ is transformed into a _tree of expressions_. CFGs are one form of syntactic grammars.
+
+In a syntactic grammar, **productions** are the rules that transform tokens into expressions, and **derivations** are the expressions themselves. In other words, the rules _produce_ expressions and the expressions are _derived_ from the rules in the grammar.
+
+In a context-free grammar, each production has a **head** and **body**. The head is the name of the production and the body is a list of _symbols_ that is produced. **Symbols** can either be a "letter in the alphabet of the grammar", or it can be a reference to another production in the grammar.
+
+The "letters in the alphabet of a grammar" are called **terminals**, and they symbolize an endpoint in the grammar where you can stop. On the other hand, the references to another production in the grammar are called **nonterminals**, and you must continue to apply more productions until you reach a terminal symbol.
+
+:::info Fun Fact
+
+A syntactic grammar is how we define the _meaning_ of various tokens in our language. And yet, we would like some tool for defining the syntactic grammar itself. How do we build this _meta-grammar_ for describing syntactic grammars?
+
+Nowadays, most programming languages have their syntactic grammar defined in _Backus-Naur form (BNF)_, which is a notation that was created by John Backus to specify the syntactic grammar of ALGOL 58.
+
+:::
+
+For our syntactic grammars in this book, the terminals will be _quoted strings_ and the nonterminals will be _lowercase words_. Each production will be notated with a name (head), a right arrow (→), and a body that ends with a semicolon (;).
+
+```go
+head → body ;
+```
+
+Consider the following syntactic grammar for a breakfast menu:
+
+```go
+breakfast  → protein "with" breakfast "on the side" ;
+breakfast  → protein ;
+breakfast  → bread ;
+
+protein    → crispiness "crispy" "bacon" ;
+protein    → "sausage" ;
+protein    → cooked "eggs" ;
+
+crispiness → "really" ;
+crispiness → "really" crispiness;
+
+cooked     → "scrambled" ;
+cooked     → "poached" ;
+cooked     → "fried" ;
+
+bread      → "toast" ;
+bread      → "biscuits" ;
+bread      → "English muffin" ;
+```
+
+Suppose we are given this grammar and we want to build a _derivation_ that is a `breakfast`. We have three productions for `breakfast` to choose from. Let us choose the first one:
+
+```go
+breakfast → protein "with" breakfast "on the side" ;
+```
+
+At this point, our head `breakfast` has _produced_ the _derivation_ `protein "with" breakfast "on the side"`. This derivation has some terminals (`"with"` and `"on the side"`), but it also has some nonterminals (`protein` and `breakfast`) that we need to continue building.
+
+```go
+protein "with" breakfast "on the side"
+```
+
+We want this derivation to have _only terminals_. For the nonterminal `protein`, we can choose from three productions. Let us choose the second one:
+
+```go
+protein → "sausage" ;
+```
+
+The body of this production is `"sausage"`, a derivation with a single terminal, so we can stop here. At this point, we can plug `"sausage"` back into our derivation:
+
+```go
+protein "with" breakfast "on the side"
+// changes into...
+"sausage" "with" breakfast "on the side"
+```
+
+Our derivation still has one nonterminal `breakfast`. This may seem strange since we originally started with `breakfast`, but this production in the grammar gives us the power of _recursion_. Let us now choose the third production for `breakfast`:
+
+```go
+breakfast → bread ;
+```
+
+Now, our derivation looks like this:
+
+```go
+"sausage" "with" breakfast "on the side"
+// changes into...
+"sausage" "with" bread "on the side"
+```
+
+Our derivation is almost complete. We still have a nonterminal `bread`, which has three productions to choose from. Let us choose the third one:
+
+```go
+bread → "English muffin" ;
+```
+
+If we plug this back into our derivation, we have the following:
+
+```go
+"sausage" "with" bread "on the side"
+// changes into...
+"sausage" "with" "English muffin" "on the side"
+```
+
+At last, our derivation only contains terminals, and we are done. To summarize, we started with a derivation `breakfast`, and used productions to expand nonterminals into more derivations. Each step of the way, we can _choose_ from a set of productions that expand our nonterminals. Our choice of production is arbitrary; we can choose any that we like.
+
+At this point, we can say that `"sausage" "with" "English muffin" "on the side"` _is a_ `breakfast`, according to our syntactic grammar of breakfast menus. This also means that we can plug this into another derivation if we wanted. For example:
+
+```go
+protein "with" breakfast "on the side"
+// changes into...
+protein "with" ("sausage" "with" "English muffin" "on the side") "on the side"
+```
+
+The parentheses `( )` are unncessary, but it makes it clear where `breakfast` used to be. The resulting derivation is very long, but it is technically also a valid `breakfast`.
+
+If we look back at our original specification for the grammar of breakfast menus, there are certain parts of the notation that we can make more concise.
+
+```go
+breakfast  → protein "with" breakfast "on the side" ;
+breakfast  → protein ;
+breakfast  → bread ;
+
+protein    → crispiness "crispy" "bacon" ;
+protein    → "sausage" ;
+protein    → cooked "eggs" ;
+
+crispiness → "really" ;
+crispiness → "really" crispiness;
+
+cooked     → "scrambled" ;
+cooked     → "poached" ;
+cooked     → "fried" ;
+
+bread      → "toast" ;
+bread      → "biscuits" ;
+bread      → "English muffin" ;
+```
+
+For each name (`breakfast`, `protein`, `crispiness`, `cooked`, `bread`), there are multiple bodies to choose from. We can shorten this notation to use the pipe (`|`):
+
+<Tabs>
+<TabItem value="before" label="Before">
+
+```go
+breakfast  → protein "with" breakfast "on the side" ;
+breakfast  → protein ;
+breakfast  → bread ;
+
+protein    → crispiness "crispy" "bacon" ;
+protein    → "sausage" ;
+protein    → cooked "eggs" ;
+
+crispiness → "really" ;
+crispiness → "really" crispiness;
+
+cooked     → "scrambled" ;
+cooked     → "poached" ;
+cooked     → "fried" ;
+
+bread      → "toast" ;
+bread      → "biscuits" ;
+bread      → "English muffin" ;
+```
+
+</TabItem>
+<TabItem value="after" label="After" default>
+
+```go
+breakfast  → protein "with" breakfast "on the side"
+           | protein
+           | bread ;
+
+protein    → crispiness "crispy" "bacon"
+           | "sausage"
+           | cooked "eggs" ;
+
+crispiness → "really"
+           | "really" crispiness;
+
+cooked     → "scrambled"
+           | "poached"
+           | "fried" ;
+
+bread      → "toast"
+           | "biscuits"
+           | "English muffin" ;
+```
+
+</TabItem>
+</Tabs>
+
+We can also _inline_ productions for `cooked` into the third production for `protein` by using parentheses `( )`:
+
+<Tabs>
+<TabItem value="before" label="Before">
+
+```go
+protein    → crispiness "crispy" "bacon"
+           | "sausage"
+           | cooked "eggs" ;
+```
+
+</TabItem>
+<TabItem value="after" label="After" default>
+
+```go
+protein    → crispiness "crispy" "bacon"
+           | "sausage"
+           | ("scrambed" | "poached" | "fried") "eggs" ;
+```
+
+</TabItem>
+</Tabs>
+
+The productions for `crispiness` all you to have recursively add more and more `"really"`s into your derivation. We know we want at least one `"really"`, so we can use the regex notation of `*` or `+` to simplify our grammar:
+
+```go
+crispiness → "really"
+           | "really" crispiness;
+// changes to...
+crispiness → "really"+;
+// or it can be...
+crispiness → "really" "really"*;
+```
+
+<Tabs>
+<TabItem value="before" label="Before">
+
+```go
+crispiness → "really"
+           | "really" crispiness;
+```
+
+</TabItem>
+<TabItem value="after-star" label="After (using `*`)" default>
+
+```go
+crispiness → "really" "really"*;
+```
+
+</TabItem>
+<TabItem value="after-plus" label="After (using `+`)" default>
+
+```go
+crispiness → "really"+;
+```
+
+</TabItem>
+</Tabs>
+
+Lastly, we can use the regex notation of `?` to notate something that is _optional_:
+
+<Tabs>
+<TabItem value="before" label="Before">
+
+```go
+breakfast  → protein "with" breakfast "on the side"
+           | protein
+           | bread ;
+```
+
+</TabItem>
+<TabItem value="after" label="After" default>
+
+```go
+breakfast  → protein ("with" breakfast "on the side")?
+           | bread ;
+```
+
+</TabItem>
+</Tabs>
+
+With all these changes, our grammar for breakfast menus become:
+
+<Tabs>
+<TabItem value="before" label="Before">
+
+```go
+breakfast  → protein "with" breakfast "on the side" ;
+breakfast  → protein ;
+breakfast  → bread ;
+
+protein    → crispiness "crispy" "bacon" ;
+protein    → "sausage" ;
+protein    → cooked "eggs" ;
+
+crispiness → "really" ;
+crispiness → "really" crispiness;
+
+cooked     → "scrambled" ;
+cooked     → "poached" ;
+cooked     → "fried" ;
+
+bread      → "toast" ;
+bread      → "biscuits" ;
+bread      → "English muffin" ;
+```
+
+</TabItem>
+<TabItem value="after" label="After" default>
+
+```go
+breakfast  → protein ("with" breakfast "on the side")?
+           | bread ;
+
+protein    → "really"+ "crispy" "bacon"
+           | "sausage"
+           | ("scrambled" | "poached" | "fried") "eggs" ;
+
+bread      → "toast" ;
+           | "biscuits" ;
+           | "English muffin" ;
+```
+
+</TabItem>
+</Tabs>
+
+The notation used here is similar to what is used for regex; instead of individual characters in a string, we are working with _symbols as individual units_.
+
+## Section 5.2: Implementing Syntax Trees
+
+To implement the syntactic grammar for the Lox language, we will need to write a _parser_ that can apply our _productions_ to the input, a stream of tokens. The book uses Java to implement the parser, and each production needs its own class. This chapter spends a lot of time to write boilerplate Java code for these classes.
+
+## Section 5.3: Working with Trees
+
+This chapter discusses a design pattern call the _visitor pattern_ that is useful for allowing an OOP language like Java to add different behavior to similar classes. The application here is that we want each type of expression in the Lox AST to behave in a slightly different way when we `parse` and `interpret` them.
+
+This chapter also touches on the **expression problem**, which is a conflict between data and behavior.
+
+In OOP languages, it is easy to add new abstractions for data (classes) but tedious to add new abstractions for behavior (more methods inside each existing class).
+
+On the other hand, functional languages make it easy to add new behavior (functions) but tedious to add data structures that can use those behaviors (more functions with slightly different type signatures).
+
+In an OOP language, you should have a strong understanding of the _behaviors_ in your domain at the beginning, and it is trivial to add new data structures that implement those behaviors over time. If you want to add _new behaviors_, it will be tedious to change all the existing data structures to also implement this new behavior. In some cases, it might not even be possible; this limits your code's capabilities or requires a complete rethinking of your foundational behaviors.
+
+In a functional language, you should have a strong understanding of the _data structures_ in your domain at the beginning, and it is trivial to add new behavior for each data structure. If you want to add _new data structures_, it will be tedious to implement all the exiting behaviors for this new data structure. In some cases, it might not even be possible; this limits your code's capabilities or requires a complete rethinking of your base data structures.
+
+## Section 5.4: A (Not Very) Pretty Printer
+
+This chapter uses the visitor pattern to implement a pretty printer for the various Java classes that represent productions in the Lox syntactic grammar.

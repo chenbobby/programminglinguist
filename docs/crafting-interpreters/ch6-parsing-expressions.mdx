@@ -1,0 +1,127 @@
+---
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# Chapter 6: Parsing Expressions
+
+## Section 6.1: Ambiguity and the Parsing Game
+
+The job of a **parser** is to determine if a given input (stream of tokens) is a valid expression in a given syntactic grammar. If so, a parser should also tell us _which productions_ in the syntactic grammar could have generated our original input.
+
+The _could have_ part is important because it is possible for a grammar to be _ambiguous_. This means that a given input could have different choices for which productions were used.
+
+The ambiguity here is the source code's _meaning_. What did the programmer _mean_ when they wrote this code? If a grammar is ambiguous, then the parser could accidentally misunderstand the code and execute the wrong instructions in the end.
+
+For example, the following expression could be ambiguous:
+
+$$
+10 - 4 * 2
+$$
+
+Luckily, we are taught the _order of operations_ in arithmetic that disambiguates this expression. Similarly, we can use techniques to disambiguate an ambiguous grammar.
+
+**Precedence** determines which operator is evaluted first, when an expression contains _a mix of different operators_. Precedence is defined over a set of operators. For example, in arithmetic we know that multiplication has _precedence_ over subtraction.
+
+**Associativity** determines which operator is evaluated first, when an expression contains _a series of the same operator_. Associativity is defined on a single operator. An operator that is _left-associative_ means that operators on the left are evaluated first. Conversly, an operator that is _right-associative_ means that operators on the right are evaluated first.
+
+<Tabs>
+<TabItem value="left" label="Left Associativity">
+
+```go
+// Subtraction is left-associative.
+
+5 - 3 - 1
+// is the same as...
+(5 - 3) - 1
+```
+
+</TabItem>
+<TabItem value="right" label="Right Associativity">
+
+```go
+// Variable assignment is right-associative.
+
+a = b = c
+// is the same as...
+a = (b = c)
+```
+
+</TabItem>
+</Tabs>
+
+:::warning Research Todo
+
+Some parsing techniques have trouble with productions that are **left-recursive**, meaning that the first symbol in the body is the same as the head.
+
+```go
+factor → factor "*" "number"
+       | "number" ;
+```
+
+**But, what are these parsing techniques? And why do they have "trouble"?**
+
+We define our production above that way because we want _left-associativity_, but there are workarounds, such as the following:
+
+```go
+factor → "number" ("*" "number")* ;
+```
+
+This production will match the same syntax as the previous rule, but it no longer is left-recursive.
+
+**What are the effects on downstream compilation steps?**
+
+:::
+
+## Section 6.2: Recursive Descent Parsing
+
+There a many many parsing techniques:
+
+* LL(k)
+* LR(1)
+* LALR
+* parser combinators
+* parser generators
+* Earley parsers
+* the shunting yard algorithm
+* packrat parsing
+
+The one that the first Lox interpreter will use is **recursive descent**. It's a simple technique and is used in GCC (the GNU C Compiler), V8 (Google Chrome's JavaScript VM), and Roslyn (the C# compiler).
+
+Recursive descent is in the family of _top-down parsers_ because it starts with the "top" or outermost grammar rule and builds a syntax tree downwards until it reaches the leaves (terminal symbols).
+
+In contrast, _bottom-up parsers_ (such as LR) starts with terminals and composes them into larger syntax trees.
+
+It is straightforward to translate the rules in a syntactic grammar into imperative code; each production becomes a function. Any recursive productions will result in recursive function calls.
+
+:::info Fun Fact
+
+Sometimes, the implementation of recursive descent will involve _looking ahead_ at upcoming tokens to determine which production to apply. This puts recursive descent in the family of **predictive parsers**.
+
+:::
+
+## Section 6.3: Syntax Errors
+
+The main purpose of a parser is the transform the input (a stream of tokens) into the output (an AST). If the parser detects that the input is not valid in the syntactic grammar, then a _syntax error_ occurs.
+
+When a parser reaches a syntax errors, it _must_ do the following:
+
+* detect and report the syntax error
+* avoid crashing or entering an infinite loop
+
+To be even better, a parser should do the following:
+
+* detect syntax errors _quickly_
+* report as many syntax errors as possible within the input
+* minimize _cascading errors_
+
+The second and third "nice-to-have" are in contention. You want to let the programmer know where the errors are, but you don't want to add noisy errors that are the result of the first error.
+
+When a parser reaches a syntax error, it wants to reset its state and continue parsing the upcoming tokens, perhaps to check for more errors. This process is called **synchronization**. The parser can designate a subset of productions in the grammar as **synchronization points**. When a parser encounters a syntax error, it can reset its parsing state by jumping out of any nested productions until it reaches a synchronization point. Then, the parser will skip over tokens in the input until it reaches a token that is valid for the given synchroniztion point.
+
+In practice, statements are traditionally used as synchronization points, but these have not yet been implemented in the Lox parser at this point in the book.
+
+## Section 6.4: Wiring up the Parser
+
+This chapter gives some Java code snippets of how to connect the parser with the rest of our interpreter (currently just the scanner).

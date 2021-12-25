@@ -1,0 +1,76 @@
+---
+---
+
+# Chapter 3: The Lox Language
+
+## Section 3.1-3.2: Properties of the Lox language
+
+Lox has C-like syntax:
+
+* each statement should end with a semicolon `;`
+* line comments start with double slashes `//`
+* and so on.
+
+The purpose of C-like syntax is that it is _familiar_ to most programmers. A lot of popular languages like Java, Javascript, and Go also have C-like syntax.
+
+Unlike C, Lox is **dynamically typed**. Variables can store values of any type; they can even store different types at different times, although only one type is allowed at a single moment in time. Type errors are only detected at runtime.
+
+Lox also has _automatic memory management_ using garbage collection (GC). The two main techniques for automatic memory management is **reference counting** and **tracing garbage collection**. These two techniques are like two opposite ends of a spectrum. In practice, memory management involves both techniques.
+
+## Section 3.3-3.4: Data Types and Expressions
+
+Lox supports the following data types:
+
+* **booleans**
+* **numbers** (double-precision floating point)
+* **strings**
+* **functions**
+* **nil**
+
+In a dynamically-typed language, `nil` is a useful concept to have, and it's also quite annoying to eliminate in practice.
+
+When you evaluate an expression, you produce a _value_. All values have a data type.
+
+An expression can be a combination of an operator with operands. An **operator** is evaluated on **operands**. The syntax for an operator can either be infix, prefix, or postfix.
+
+Lox supports arithmetic operators: `+`, `-`, `*`, `/`. These are _binary operators_.
+
+Lox supports comparison and equality operators: `==`, `!=`, `>`, `>=`, `<`, `<=`.
+
+Lox supports logical operators: `!`, `and`, `or`. The `and` and `or` operator allow for control flow by _short-circuiting_. For example, if the first operand of an `and` expression is `false`, then the second operand is never evaluated.
+
+## Section 3.5-3.7: Statements, Variables, and Control Flow
+
+When you evaluate a statement, you produce an _effect_, not a value. To be useful, a statement's effect must "change the world" in some way; usually this is done by modifying some state, reading input, or writing outputs.
+
+One type of statements is `var`-statements. These allow you to declare variables and optionally assign a value to them. Once a variable's value is set, you can re-assign its value with an assignment statement.
+
+For control flow, Lox supports `if`-statements, `for`-loops, and `while`-loops.
+
+## Section 3.8: Functions
+
+Lox supports functions. Functions can return values with a `return`-statement.
+
+An _argument_ is a value that is passed into a function when you call it.
+
+A _parameter_ is a variable in a function definition that holds the value of an argument.
+
+Since functions are _first class_, you can use them as values to store in a variable or call another function. Moreover, a function definition is a statement, so you can define a function inside another function.
+
+Lox also supports **closures**, a function that can reference variables outside of the function's own body.
+
+# Section 3.9: Classes
+
+Lox supports classes. A class defines the _methods_, which are just functions. An instance of a class may also have _fields_, which are just variables.
+
+Object-oriented programming gets a lot of hate these days, but it is still useful in a few ways. For a dynamically-typed language, classes provide a way to define compound data types (also known as _product types_). Classes also allow you to have different behavior for the same function/method name.
+
+Object-oriented programming can be implemented with classes or prototypes.
+
+In a class-based language, there are _classes_ and _instances_. An instance will store the state for an object and reference the instance's class. A call to a method will lookup the class's implementation.
+
+In a prototype-based language, there are only instances, no classes. Each instance will store both the state and the method implementations. In a lot of cases, people re-implement classes in a prototype-based language.
+
+Lox also support class inheritance with the `<` operator. All fields and methods in a parent class are inherited by the child class, including the constructor method. To access a method of the parent class, you can use the `super` keyword.
+
+Technically, Lox is not a _pure_ object-oriented language because the built-in types are not classes of objects.

@@ -1,0 +1,36 @@
+---
+---
+
+# Appendix: Syntactic Grammar of the Lox Language
+
+In this notation, each _production_ is denoted as follows:
+
+```go
+head → body
+```
+
+Terminal symbols are written as _lowercase words_.
+
+Nonterminal symbols are written as _quoted strings_ or _all caps words_.
+
+The pipe `|` denotes _mutually exclusive derivations_.
+
+The Kleene star `*` denotes _zero or more occurrences_.
+
+The plus `+` denotes _one or more occurrences_.
+
+## Lox: Syntactic Grammar Specification
+
+```go
+expression    → sequence ;
+sequence      → ternary ( "," expression )* ;
+ternary       → equality ( "?" expression ":" expression )* ;
+equality      → comparison ( ( "==" | "!=" ) comparison )* ;
+comparison    → sum ( ( ">" | ">=" | "<" | "<=" ) sum )* ;
+sum           → product ( ( "+" | "-" ) product )* ;
+product       → unary ( ( "*" | "/" ) unary )* ;
+unary         → ( "!" | "-" ) unary
+              | primary ;
+primary       → "nil" | "true" | "false" | NUMBER | STRING
+              | "(" expression ")" ;
+```

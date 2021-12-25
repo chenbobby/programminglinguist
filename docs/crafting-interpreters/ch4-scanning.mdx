@@ -1,0 +1,36 @@
+---
+---
+
+# Chapter 4: Scanning
+
+:::info Fun Fact
+
+The terms "scanning" and "lexing" are often used interchangably; the desired behavior is to transform a stream of characters as input into a stream of tokens as output.
+
+Back in the early days of room-sized computers, "scanning" referred to the process of feeding code into a machine and storing them in memory. Then, "lexing" would process the code into tokens.
+
+:::
+
+## Section 4.1: The Interpreter Framework
+
+This section involves a lot of boilerplate Java code for reading source code, either from a file or from `stdin`.
+
+## Section 4.2: Lexemes and Tokens
+
+A **token** contains two things: a _type_ and a _lexeme_.
+
+A **token type** defines the role that the token plays in the grammar of the language.
+
+A **lexeme** is a string of characters that represent individual units in the grammar of the language. 
+
+## Section 4.3: Regular Expressions and Regular Languages
+
+For each kinds of lexeme, you might be able to use _regular expressions_ to define the **lexical grammar** of a language. A _regular language_ is a language whose lexical grammar can be completely defined by regular expressions.
+
+## Section 4.4: The Scanner Class
+
+Scanning single-character lexemes is straightforward. A single character lexeme in the source code will transform into a token with the appropriate type.
+
+If a single-character lexeme is also a prefix for a multi-character lexeme (for example, `>` and `>=`), then you will need to perform a **lookahead** (also known as _peeking_).
+
+A Rust implementation of the Lox scanner can be found in the [rustlox source code](#TODO).

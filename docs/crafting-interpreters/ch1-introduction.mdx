@@ -1,0 +1,38 @@
+---
+---
+
+# Chapter 1: Introduction
+
+This book is more focused on applications than on theory. However, the book still covers concepts and terms in programming language theory, so "if you ever find yourself in a cocktail party full of PL (programming language) researchers, you'll fit in."
+
+## Section 1.1: Why Learn This Stuff?
+
+Firstly, languages are everywhere, even if we don't notice them. For every popular general-purpose language (C, Java, Python, Ruby, etc.), there are thousands of smaller specialized languages (JSON, HTML, Make, etc.) that work very will within their niche. In some cases, you may find that existing languages don't fit the problem domain that you're working, and it's a neat trick to be able to whip up a parser of your own or create your own domain-specific language (DSL).
+
+Secondly, crafting an interpreters is _hard_. Sometimes, people like challenges.
+
+Thirdly, it will boost your confidence about your own abilities. Compilers are a scary topic; building a compiler yourself seems like a project that only god-tier engineers are capable of. The reality is that you can learn it too, and the magic will fall away as your understanding grows.
+
+Who knows? Maybe _you_ will be the one to make the next great language.
+
+## Section 1.2: How the Book is Organized
+
+There are three parts:
+
+1. Introducing concepts, terms, and Lox, the language that we will implement.
+2. Implement a Lox interpreter.
+3. Implement another Lox interpreter.
+
+In this book, we will implement an interpreter by hand, but we should acknowledge some tools that _could_ be used, but _won't_.
+
+**Compiler-compilers** are programs that can read in a _grammar file_ and produce a compiler for the language that is described by the grammar file. Some examples are Yacc ("yet another compiler-compiler") and Bison.
+
+In contrast with some other "programming language books" which will focus on the implementation of a language _from a given specification_, this book is focused on the design of a language _from scratch_. So, we will also be exploring topics in human-computer interaction (HCI), such as the ease of learning new features, the balance of novelty and familiarity, the readability of syntax, and so on.
+
+## Section 1.3: The First Interpreter
+
+The first Lox interpreter will be implemented with Java. This is because we are focused on _learning concepts_ and _achieving correctness_. This interpreter will be called `jlox`.
+
+## Section 1.4: The Second Interpreter
+
+The second Lox interpreter will be implemented with C. This is because we are focused on _understanding the implementation details_ and _speed_. This interpreter will be called `clox`.
